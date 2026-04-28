@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, Bell, Sun, Cloud, Moon, Zap, Thermometer, Activity, Cpu, Gauge, BarChart3, Sparkles, CloudSun } from 'lucide-react';
+import { Menu, Bell, Sun, Cloud, Moon, Zap, Thermometer, Activity, Cpu, Gauge, BarChart3, Sparkles, CloudSun, MapPin, CloudDrizzle, CloudRain, CloudSnow, CloudFog } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -31,19 +31,31 @@ const statConfig = [
   { key: 'efficiency', label: 'System Efficiency', unit: '%', icon: BarChart3, color: '#8B5CF6' },
 ];
 
+const weatherConditionIcons: Record<string, React.ReactNode> = {
+  Clear: <Sun size={14} className="text-yellow-400" />,
+  Clouds: <Cloud size={14} className="text-gray-300" />,
+  Rain: <CloudRain size={14} className="text-blue-300" />,
+  Drizzle: <CloudDrizzle size={14} className="text-blue-200" />,
+  Snow: <CloudSnow size={14} className="text-white" />,
+  Mist: <CloudFog size={14} className="text-gray-400" />,
+  Thunderstorm: <CloudRain size={14} className="text-purple-300" />,
+};
+
 interface DashboardPageProps {
   onMenuOpen?: () => void;
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = React.memo(({ onMenuOpen }) => {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const { user } = useAuth();
-  const { latestReading, readings, inverters, weather } = useData();
+  const { latestReading, readings, inverters, weather, gpsLocation, gpsError } = useData();
   const navigate = useNavigate();
   const greeting = useGreeting();
   const [energyPeriod, setEnergyPeriod] = useState<EnergyPeriod>('day');
   const [tipIndex, setTipIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  const w = weather!;
 
   useEffect(() => {
     const t = setTimeout(() => setLoading(false), 800);
@@ -137,6 +149,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = React.memo(({ onMenuO
 
   const handlePeriodChange = useCallback((p: EnergyPeriod) => setEnergyPeriod(p), []);
 
+  const locationText = useMemo(() => {
+    if (gpsError) return 'Solar Plant, CA';
+    if (gpsLocation) return `${w.city}, ${w.country}`;
+    return `${w.city}, ${w.country}`;
+  }, [gpsError, gpsLocation, w]);
+
   if (loading) {
     return (
       <div className="p-4 space-y-4">
@@ -156,9 +174,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = React.memo(({ onMenuO
           <span className="font-semibold text-sm">{greeting}, {user?.name?.split(' ')[0] || 'User'}</span>
         </div>
         <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium" style={{ background: colors.cardBgAlpha, border: `1px solid ${colors.border}` }}>
+            {weatherConditionIcons[w.condition] || <Sun size={14} style={{ color: colors.accent }} />}
+            <span>{w.temperature.toFixed(0)}°</span>
+            <span className="text-[10px]" style={{ color: colors.textMuted }}>{w.condition}</span>
+          </div>
           <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium" style={{ background: colors.cardBgAlpha, border: `1px solid ${colors.border}` }}>
-            <Thermometer size={14} style={{ color: colors.accent }} />
-            <span>{weather?.temperature?.toFixed(0) ?? '--'}°</span>
+            <MapPin size={12} style={{ color: colors.accent }} />
+            <span className="max-w-[80px] truncate">{locationText}</span>
           </div>
           <button onClick={() => navigate('/alerts')} className="relative p-2 rounded-xl" style={{ background: colors.cardBgAlpha }}>
             <Bell size={20} style={{ color: colors.text }} />
@@ -174,20 +197,54 @@ export const DashboardPage: React.FC<DashboardPageProps> = React.memo(({ onMenuO
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
-              backgroundImage: `url(${isDark ? 'https://images.unsplash.com/photo-1480074568708-e7b720bb3f09?w=800' : 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800'})`,
+              backgroundImage: 'url(https://www.istockphoto.com/photo/solar-panels-on-the-roof-3d-illustration-gm1935031109-556221587)',
             }}
           />
-          <div className="absolute inset-0 bg-black/50" />
+          <div className="absolute inset-0 bg-black/55" />
+
+          <motion.div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: 'radial-gradient(ellipse 60% 40% at 30% 20%, rgba(255,200,50,0.15) 0%, transparent 70%)',
+            }}
+            animate={{ opacity: [0.4, 0.8, 0.4] }}
+            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+          />
+
+          <div className="absolute top-3 left-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium text-white" style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.2)' }}>
+            <MapPin size={10} className="text-amber-400" />
+            <span>{locationText}</span>
+          </div>
+
+          <div className="absolute top-3 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium text-white" style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.2)' }}>
+            {weatherConditionIcons[w.condition] || <Sun size={10} className="text-yellow-400" />}
+            <span>{w.temperature.toFixed(0)}°C</span>
+            <span>{w.condition}</span>
+          </div>
+
+          <svg className="absolute bottom-16 left-3 opacity-20" width="40" height="40" viewBox="0 0 40 40">
+            <rect x="2" y="8" width="16" height="12" rx="1" fill="none" stroke="#FFD700" strokeWidth="1" />
+            <rect x="22" y="8" width="16" height="12" rx="1" fill="none" stroke="#FFD700" strokeWidth="1" />
+            <rect x="2" y="22" width="16" height="12" rx="1" fill="none" stroke="#FFD700" strokeWidth="1" />
+            <rect x="22" y="22" width="16" height="12" rx="1" fill="none" stroke="#FFD700" strokeWidth="1" />
+            <line x1="10" y1="8" x2="10" y2="20" stroke="#FFD700" strokeWidth="0.5" />
+            <line x1="30" y1="8" x2="30" y2="20" stroke="#FFD700" strokeWidth="0.5" />
+            <line x1="10" y1="22" x2="10" y2="34" stroke="#FFD700" strokeWidth="0.5" />
+            <line x1="30" y1="22" x2="30" y2="34" stroke="#FFD700" strokeWidth="0.5" />
+          </svg>
+
+          <svg className="absolute bottom-16 right-3 opacity-15" width="32" height="32" viewBox="0 0 32 32">
+            <rect x="2" y="2" width="12" height="8" rx="1" fill="none" stroke="#FFD700" strokeWidth="1" />
+            <rect x="18" y="2" width="12" height="8" rx="1" fill="none" stroke="#FFD700" strokeWidth="1" />
+            <rect x="2" y="14" width="12" height="8" rx="1" fill="none" stroke="#FFD700" strokeWidth="1" />
+            <rect x="18" y="14" width="12" height="8" rx="1" fill="none" stroke="#FFD700" strokeWidth="1" />
+          </svg>
 
           <div className="relative z-10 h-full flex flex-col justify-between p-5">
-            <div className="flex justify-between items-start">
+            <div className="flex justify-between items-start mt-6">
               <div>
                 <p className="text-white/80 text-sm">Production Today</p>
                 <p className="text-white text-xl font-bold">10.1 kWh</p>
-              </div>
-              <div className="flex items-center gap-1 text-white/80 text-sm">
-                <Sun size={16} />
-                <span>{weather?.temperature?.toFixed(0) ?? '--'}°C</span>
               </div>
             </div>
 

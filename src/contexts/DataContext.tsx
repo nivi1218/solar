@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import type { SolarReading, Inverter, Alert, WeatherData } from '../types';
+import { OPENWEATHER_API_KEY, OPENWEATHER_BASE_URL } from '../config/weather';
 
 interface DataContextType {
   readings: SolarReading[];
@@ -8,6 +9,8 @@ interface DataContextType {
   alerts: Alert[];
   unreadAlertCount: number;
   weather: WeatherData | null;
+  gpsLocation: { lat: number; lon: number } | null;
+  gpsError: string | null;
   markAlertRead: (id: string) => void;
   resolveAlert: (id: string) => void;
   dismissAlert: (id: string) => void;
@@ -21,6 +24,8 @@ const DataContext = createContext<DataContextType>({
   alerts: [],
   unreadAlertCount: 0,
   weather: null,
+  gpsLocation: null,
+  gpsError: null,
   markAlertRead: () => {},
   resolveAlert: () => {},
   dismissAlert: () => {},
@@ -87,6 +92,29 @@ const MOCK_WEATHER: WeatherData = {
   panelTemp: 42,
 };
 
+async function fetchWeatherByCoords(lat: number, lon: number): Promise<WeatherData | null> {
+  if (!OPENWEATHER_API_KEY) return null;
+  try {
+    const url = `${OPENWEATHER_BASE_URL}/weather?lat=${lat}&lon=${lon}&units=metric&appid=${OPENWEATHER_API_KEY}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return {
+      city: data.name || 'Unknown',
+      country: data.sys?.country || 'US',
+      temperature: data.main?.temp ?? 28,
+      humidity: data.main?.humidity ?? 45,
+      windSpeed: (data.wind?.speed ?? 12) * 3.6,
+      condition: data.weather?.[0]?.main || 'Clear',
+      icon: data.weather?.[0]?.icon || '01d',
+      irradiance: 700 + Math.random() * 300,
+      panelTemp: (data.main?.temp ?? 28) + 14,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export const DataProvider: React.FC<{ children: React.ReactNode }> = React.memo(({ children }) => {
   const [readings, setReadings] = useState<SolarReading[]>(() => {
     const initial: SolarReading[] = [];
@@ -103,6 +131,56 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = React.memo(
   const [alerts, setAlerts] = useState<Alert[]>(generateAlerts);
   const [readAlerts, setReadAlerts] = useState<Set<string>>(new Set());
   const [weather, setWeather] = useState<WeatherData>(MOCK_WEATHER);
+  const [gpsLocation, setGpsLocation] = useState<{ lat: number; lon: number } | null>(null);
+  const [gpsError, setGpsError] = useState<string | null>(null);
+  const requestGps = useCallback(() => {
+    if (!navigator.geolocation) {
+      setGpsError('Geolocation not supported');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGpsLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+        setGpsError(null);
+      },
+      (err) => {
+        setGpsError(err.message);
+      },
+      { enableHighAccuracy: false, timeout: 10000 }
+    );
+  }, []);
+
+  useEffect(() => {
+    requestGps();
+  }, [requestGps]);
+
+  useEffect(() => {
+    if (gpsLocation && OPENWEATHER_API_KEY) {
+      fetchWeatherByCoords(gpsLocation.lat, gpsLocation.lon).then(data => {
+        if (data) setWeather(data);
+      });
+    }
+  }, [gpsLocation]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (gpsLocation && OPENWEATHER_API_KEY) {
+        fetchWeatherByCoords(gpsLocation.lat, gpsLocation.lon).then(data => {
+          if (data) setWeather(data);
+        });
+      } else {
+        setWeather(prev => ({
+          ...prev,
+          temperature: prev.temperature + (Math.random() - 0.5) * 0.5,
+          humidity: Math.max(20, Math.min(80, prev.humidity + (Math.random() - 0.5) * 2)),
+          windSpeed: Math.max(0, prev.windSpeed + (Math.random() - 0.5) * 1),
+          irradiance: Math.max(0, prev.irradiance + (Math.random() - 0.5) * 20),
+          panelTemp: prev.panelTemp + (Math.random() - 0.5) * 0.3,
+        }));
+      }
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [gpsLocation]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -112,20 +190,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = React.memo(
         return [...prev.slice(-50), newReading];
       });
     }, 3000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setWeather(prev => ({
-        ...prev,
-        temperature: prev.temperature + (Math.random() - 0.5) * 0.5,
-        humidity: Math.max(20, Math.min(80, prev.humidity + (Math.random() - 0.5) * 2)),
-        windSpeed: Math.max(0, prev.windSpeed + (Math.random() - 0.5) * 1),
-        irradiance: Math.max(0, prev.irradiance + (Math.random() - 0.5) * 20),
-        panelTemp: prev.panelTemp + (Math.random() - 0.5) * 0.3,
-      }));
-    }, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -142,8 +206,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = React.memo(
   }, []);
 
   const refreshWeather = useCallback(() => {
-    setWeather(prev => ({ ...prev, temperature: 25 + Math.random() * 10 }));
-  }, []);
+    if (gpsLocation && OPENWEATHER_API_KEY) {
+      fetchWeatherByCoords(gpsLocation.lat, gpsLocation.lon).then(data => {
+        if (data) setWeather(data);
+      });
+    } else {
+      requestGps();
+      setWeather(prev => ({ ...prev, temperature: 25 + Math.random() * 10 }));
+    }
+  }, [gpsLocation, requestGps]);
 
   const latestReading = useMemo(() => readings[readings.length - 1] || null, [readings]);
 
@@ -151,8 +222,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = React.memo(
 
   const value = useMemo(() => ({
     readings, latestReading, inverters, alerts, unreadAlertCount, weather,
+    gpsLocation, gpsError,
     markAlertRead, resolveAlert, dismissAlert, refreshWeather,
-  }), [readings, latestReading, inverters, alerts, unreadAlertCount, weather, markAlertRead, resolveAlert, dismissAlert, refreshWeather]);
+  }), [readings, latestReading, inverters, alerts, unreadAlertCount, weather, gpsLocation, gpsError, markAlertRead, resolveAlert, dismissAlert, refreshWeather]);
 
   return (
     <DataContext.Provider value={value}>
