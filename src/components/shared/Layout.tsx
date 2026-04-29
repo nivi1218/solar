@@ -19,7 +19,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = React.memo(({ chi
   const [drawerOpen, setDrawerOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { logout, user } = useAuth();
 
   const closeDrawer = useCallback(() => setDrawerOpen(false), []);
@@ -35,7 +35,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = React.memo(({ chi
   }, [logout, navigate, closeDrawer]);
 
   return (
-    <div className="min-h-screen pb-20 transition-colors duration-800" style={{ background: colors.background, color: colors.text }}>
+    <div className="min-h-screen pb-24 transition-colors duration-800" style={{ background: colors.background, color: colors.text }}>
       <AnimatePresence>
         {drawerOpen && (
           <>
@@ -50,9 +50,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = React.memo(({ chi
             <motion.div
               className="fixed top-0 left-0 bottom-0 z-50 w-72 p-6 flex flex-col"
               style={{
-                background: colors.cardBgAlpha,
+                background: isDark ? 'rgba(27, 42, 59, 0.95)' : 'rgba(255, 255, 255, 0.95)',
                 backdropFilter: 'blur(24px)',
-                borderRight: `1px solid ${colors.border}`,
+                borderRight: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)'}`,
               }}
               initial={{ x: -288 }}
               animate={{ x: 0 }}

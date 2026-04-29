@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Droplets, Wind, Thermometer, Sun, RefreshCw, MapPin, Navigation } from 'lucide-react';
+import { Droplets, Wind, Thermometer, Sun, RefreshCw, MapPin, Navigation, CloudSun, Sparkles } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useData } from '../../contexts/DataContext';
@@ -17,7 +17,7 @@ const weatherIcons: Record<string, string> = {
 };
 
 export const SitePage: React.FC = React.memo(() => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { weather, refreshWeather, gpsLocation, gpsError } = useData();
   const [spinning, setSpinning] = useState(false);
 
@@ -31,8 +31,8 @@ export const SitePage: React.FC = React.memo(() => {
 
   const metrics = useMemo(() => [
     { key: 'humidity', label: 'Humidity', value: w.humidity.toFixed(0), unit: '%', icon: Droplets, color: '#3B82F6', data: Array.from({ length: 8 }, () => 40 + Math.random() * 20) },
-    { key: 'wind', label: 'Wind Speed', value: w.windSpeed.toFixed(1), unit: 'km/h', icon: Wind, color: '#4ECDC4', data: Array.from({ length: 8 }, () => 8 + Math.random() * 10) },
-    { key: 'panelTemp', label: 'Panel Temp', value: w.panelTemp.toFixed(1), unit: '°C', icon: Thermometer, color: '#EF4444', data: Array.from({ length: 8 }, () => 35 + Math.random() * 15) },
+    { key: 'wind', label: 'Wind Speed', value: w.windSpeed.toFixed(1), unit: 'km/h', icon: Wind, color: '#27AE60', data: Array.from({ length: 8 }, () => 8 + Math.random() * 10) },
+    { key: 'panelTemp', label: 'Panel Temp', value: w.panelTemp.toFixed(1), unit: '°C', icon: Thermometer, color: '#F5A623', data: Array.from({ length: 8 }, () => 35 + Math.random() * 15) },
     { key: 'irradiance', label: 'Irradiance', value: w.irradiance.toFixed(0), unit: 'W/m²', icon: Sun, color: '#F5A623', data: Array.from({ length: 8 }, () => 700 + Math.random() * 300) },
   ], [w]);
 
@@ -45,48 +45,83 @@ export const SitePage: React.FC = React.memo(() => {
   }, [gpsLocation]);
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-5 pb-24">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold" style={{ color: colors.text }}>Site Conditions</h2>
         <motion.button
           onClick={handleRefresh}
-          className="p-2 rounded-xl"
-          style={{ background: colors.cardBgAlpha, border: `1px solid ${colors.border}` }}
+          className="w-10 h-10 rounded-full flex items-center justify-center"
+          style={{ background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)', border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)'}` }}
           animate={{ rotate: spinning ? 360 : 0 }}
           transition={{ duration: 1, ease: 'linear' }}
         >
-          <RefreshCw size={18} style={{ color: colors.accent }} />
+          <RefreshCw size={16} style={{ color: colors.accent }} />
         </motion.button>
       </div>
 
-      <GlassCard className="text-center" padding="p-6">
-        <div className="text-5xl mb-2">{weatherIcons[w.condition] || '🌤️'}</div>
-        <p className="text-3xl font-bold font-mono" style={{ color: colors.text }}>{w.temperature.toFixed(1)}°C</p>
-        <p className="text-sm mt-1" style={{ color: colors.textMuted }}>{w.condition}</p>
-        <div className="flex items-center justify-center gap-1 mt-2 text-sm" style={{ color: colors.accent }}>
-          <MapPin size={14} />
-          <span>{w.city}, {w.country}</span>
-        </div>
-        <div className="flex items-center justify-center gap-1.5 mt-2">
-          <div className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium" style={{ background: gpsError ? '#EF444422' : '#27AE6022', color: gpsError ? '#EF4444' : '#27AE60', border: `1px solid ${gpsError ? '#EF444444' : '#27AE6044'}` }}>
-            <Navigation size={10} />
-            <span>{gpsError ? 'Mock Location' : 'Using Current Device Location'}</span>
+      {/* Large weather hero card with pastel gradient */}
+      <GlassCard className="relative overflow-hidden" padding="p-0">
+        <div className="relative rounded-[24px] overflow-hidden">
+          <div className="absolute inset-0" style={{
+            background: isDark
+              ? 'linear-gradient(135deg, #0D1B2A 0%, #1B2A3B 50%, #1a3a4a 100%)'
+              : 'linear-gradient(135deg, #B8E4F0 0%, #E8F5E9 40%, #FFF8E1 100%)',
+          }} />
+          {/* Decorative sun icons in corners */}
+          <motion.div
+            className="absolute top-4 right-4 opacity-20"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
+          >
+            <Sun size={48} style={{ color: isDark ? '#FFD700' : '#F5A623' }} />
+          </motion.div>
+          <motion.div
+            className="absolute bottom-4 left-4 opacity-10"
+            animate={{ rotate: -360 }}
+            transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
+          >
+            <CloudSun size={36} style={{ color: isDark ? '#FFD700' : '#F5A623' }} />
+          </motion.div>
+
+          <div className="relative z-10 text-center py-8 px-6">
+            <div className="text-5xl mb-3">{weatherIcons[w.condition] || '🌤️'}</div>
+            <p className="text-4xl font-bold font-mono" style={{ color: isDark ? '#E8EDF2' : '#1A1A2E' }}>
+              {w.temperature.toFixed(1)}°C
+            </p>
+            <p className="text-sm mt-2 font-medium" style={{ color: isDark ? 'rgba(232,237,242,0.6)' : 'rgba(26,26,46,0.5)' }}>
+              {w.condition} • {w.windSpeed.toFixed(0)} km/h breeze
+            </p>
+            <div className="flex items-center justify-center gap-1.5 mt-3">
+              <MapPin size={14} style={{ color: colors.accent }} />
+              <span className="text-sm font-medium" style={{ color: colors.accent }}>{w.city}, {w.country}</span>
+            </div>
+            <div className="flex items-center justify-center gap-1.5 mt-2">
+              <div className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold" style={{
+                background: gpsError ? 'rgba(239,68,68,0.12)' : 'rgba(39,174,96,0.12)',
+                color: gpsError ? '#EF4444' : '#27AE60',
+                border: `1px solid ${gpsError ? 'rgba(239,68,68,0.2)' : 'rgba(39,174,96,0.2)'}`,
+              }}>
+                <Navigation size={10} />
+                <span>{gpsError ? 'Mock Location' : 'Using Current Device Location'}</span>
+              </div>
+            </div>
           </div>
         </div>
       </GlassCard>
 
+      {/* Mini location map */}
       {mapUrl && (
         <GlassCard padding="p-0" className="overflow-hidden">
           <div className="p-3 pb-0">
             <div className="flex items-center gap-2 mb-2">
               <MapPin size={14} style={{ color: colors.accent }} />
-              <span className="text-xs font-medium" style={{ color: colors.text }}>Plant Location</span>
-              <span className="text-[10px] ml-auto" style={{ color: colors.textMuted }}>
+              <span className="text-xs font-semibold" style={{ color: colors.text }}>Plant Location</span>
+              <span className="text-[10px] ml-auto font-mono" style={{ color: colors.textMuted }}>
                 {gpsLocation?.lat.toFixed(4)}°, {gpsLocation?.lon.toFixed(4)}°
               </span>
             </div>
           </div>
-          <div className="h-32 overflow-hidden rounded-b-[20px]">
+          <div className="h-28 overflow-hidden rounded-b-[24px]">
             <iframe
               title="Location Map"
               src={mapUrl}
@@ -97,6 +132,7 @@ export const SitePage: React.FC = React.memo(() => {
         </GlassCard>
       )}
 
+      {/* 2x2 metric tiles */}
       <div className="grid grid-cols-2 gap-3">
         {metrics.map((m, i) => {
           const Icon = m.icon;
@@ -108,8 +144,8 @@ export const SitePage: React.FC = React.memo(() => {
               transition={{ delay: i * 0.05 }}
             >
               <GlassCard padding="p-4" hover>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: `${m.color}22` }}>
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: `${m.color}15` }}>
                     <Icon size={16} style={{ color: m.color }} />
                   </div>
                   <span className="text-xs font-medium" style={{ color: colors.textMuted }}>{m.label}</span>
@@ -120,7 +156,7 @@ export const SitePage: React.FC = React.memo(() => {
                 <div className="h-8 mt-2">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={m.data.map((v, j) => ({ name: j, value: v }))}>
-                      <Area type="monotone" dataKey="value" stroke={m.color} fill={`${m.color}33`} dot={false} />
+                      <Area type="monotone" dataKey="value" stroke={m.color} fill={`${m.color}18`} dot={false} strokeWidth={1.5} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -129,6 +165,19 @@ export const SitePage: React.FC = React.memo(() => {
           );
         })}
       </div>
+
+      {/* Environmental Insights card */}
+      <GlassCard style={{ background: `${colors.accent}08`, border: `1px solid ${colors.accent}20` } as React.CSSProperties}>
+        <div className="flex items-start gap-3">
+          <Sparkles size={18} style={{ color: colors.accent }} className="mt-0.5 shrink-0" />
+          <div>
+            <span className="font-bold text-sm" style={{ color: colors.accent }}>Environmental Insights: </span>
+            <span className="text-sm" style={{ color: colors.text }}>
+              Current conditions are favorable for solar generation. Clear skies and moderate temperatures support optimal panel efficiency.
+            </span>
+          </div>
+        </div>
+      </GlassCard>
     </div>
   );
 });

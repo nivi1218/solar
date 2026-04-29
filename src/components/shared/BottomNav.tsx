@@ -16,20 +16,22 @@ const tabs = [
 export const BottomNav: React.FC = React.memo(() => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { unreadAlertCount } = useData();
 
   const activeTab = useMemo(() => tabs.findIndex(t => location.pathname.startsWith(t.path)), [location.pathname]);
 
   return (
     <motion.nav
-      className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around px-2 py-2"
+      className="fixed bottom-3 left-3 right-3 z-50 flex items-center justify-around py-2 px-2 rounded-[28px]"
       style={{
-        background: colors.cardBgAlpha,
+        background: isDark ? 'rgba(27, 42, 59, 0.85)' : 'rgba(255, 255, 255, 0.9)',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
-        borderTop: `1px solid ${colors.border}`,
-        boxShadow: `0 -4px 24px ${colors.shadow}`,
+        border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)'}`,
+        boxShadow: isDark
+          ? '0 8px 32px rgba(0,0,0,0.4)'
+          : '0 10px 40px rgba(0,0,0,0.08)',
       }}
       initial={{ y: 80 }}
       animate={{ y: 0 }}
@@ -42,38 +44,40 @@ export const BottomNav: React.FC = React.memo(() => {
           <button
             key={tab.path}
             onClick={() => navigate(tab.path)}
-            className="relative flex flex-col items-center gap-0.5 py-1 px-3"
+            className="relative flex flex-col items-center gap-0.5 py-1.5 px-4 min-w-[56px]"
           >
             {isActive && (
               <motion.div
-                layoutId="activeTab"
-                className="absolute -top-1 inset-x-1 h-8 rounded-full"
-                style={{ background: `${colors.accent}22` }}
+                layoutId="activeTabPill"
+                className="absolute -top-0.5 inset-x-1 h-[42px] rounded-2xl"
+                style={{ background: `${colors.accent}18` }}
                 transition={{ type: 'spring', stiffness: 400, damping: 30 }}
               />
             )}
-            <div className="relative">
-              <Icon
-                size={20}
+            <div className="relative z-10 flex flex-col items-center gap-0.5">
+              <div className="relative">
+                <Icon
+                  size={20}
+                  style={{ color: isActive ? colors.accent : colors.textMuted }}
+                  fill={isActive ? colors.accent : 'none'}
+                  strokeWidth={isActive ? 2.5 : 1.5}
+                />
+                {tab.label === 'Alerts' && unreadAlertCount > 0 && (
+                  <span
+                    className="absolute -top-1.5 -right-2.5 min-w-[16px] h-4 flex items-center justify-center rounded-full text-[10px] font-bold text-white px-1"
+                    style={{ background: '#EF4444' }}
+                  >
+                    {unreadAlertCount}
+                  </span>
+                )}
+              </div>
+              <span
+                className="text-[10px] font-semibold"
                 style={{ color: isActive ? colors.accent : colors.textMuted }}
-                fill={isActive ? colors.accent : 'none'}
-                strokeWidth={isActive ? 2.5 : 1.5}
-              />
-              {tab.label === 'Alerts' && unreadAlertCount > 0 && (
-                <span
-                  className="absolute -top-1.5 -right-2 min-w-[16px] h-4 flex items-center justify-center rounded-full text-[10px] font-bold text-white px-1"
-                  style={{ background: '#EF4444' }}
-                >
-                  {unreadAlertCount}
-                </span>
-              )}
+              >
+                {tab.label}
+              </span>
             </div>
-            <span
-              className="text-[10px] font-medium"
-              style={{ color: isActive ? colors.accent : colors.textMuted }}
-            >
-              {tab.label}
-            </span>
           </button>
         );
       })}

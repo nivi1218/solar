@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, Bell, Sun, Cloud, Moon, Zap, Thermometer, Activity, Cpu, Gauge, BarChart3, Sparkles, CloudSun, MapPin, CloudDrizzle, CloudRain, CloudSnow, CloudFog } from 'lucide-react';
+import { Menu, Bell, Sun, Cloud, Moon, Zap, Thermometer, Activity, Cpu, Gauge, BarChart3, Sparkles, CloudSun, MapPin, Home } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -31,24 +31,14 @@ const statConfig = [
   { key: 'efficiency', label: 'System Efficiency', unit: '%', icon: BarChart3, color: '#8B5CF6' },
 ];
 
-const weatherConditionIcons: Record<string, React.ReactNode> = {
-  Clear: <Sun size={14} className="text-yellow-400" />,
-  Clouds: <Cloud size={14} className="text-gray-300" />,
-  Rain: <CloudRain size={14} className="text-blue-300" />,
-  Drizzle: <CloudDrizzle size={14} className="text-blue-200" />,
-  Snow: <CloudSnow size={14} className="text-white" />,
-  Mist: <CloudFog size={14} className="text-gray-400" />,
-  Thunderstorm: <CloudRain size={14} className="text-purple-300" />,
-};
-
 interface DashboardPageProps {
   onMenuOpen?: () => void;
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = React.memo(({ onMenuOpen }) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { user } = useAuth();
-  const { latestReading, readings, inverters, weather, gpsLocation, gpsError } = useData();
+  const { latestReading, readings, inverters, weather } = useData();
   const navigate = useNavigate();
   const greeting = useGreeting();
   const [energyPeriod, setEnergyPeriod] = useState<EnergyPeriod>('day');
@@ -71,10 +61,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = React.memo(({ onMenuO
 
   const greetingIcon = useMemo(() => {
     const hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) return <Sun size={20} style={{ color: '#F5A623' }} />;
-    if (hour >= 12 && hour < 17) return <CloudSun size={20} style={{ color: '#F5A623' }} />;
-    if (hour >= 17 && hour < 21) return <Cloud size={20} style={{ color: '#FFB347' }} />;
-    return <Moon size={20} style={{ color: '#4ECDC4' }} />;
+    if (hour >= 5 && hour < 12) return <Sun size={18} style={{ color: '#F5A623' }} />;
+    if (hour >= 12 && hour < 17) return <CloudSun size={18} style={{ color: '#F5A623' }} />;
+    if (hour >= 17 && hour < 21) return <Cloud size={18} style={{ color: '#FFB347' }} />;
+    return <Moon size={18} style={{ color: '#4ECDC4' }} />;
   }, []);
 
   const activeInverters = useMemo(() => inverters.filter(i => i.status === 'active').length, [inverters]);
@@ -146,14 +136,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = React.memo(({ onMenuO
   }, [readings]);
 
   const periodTabs: EnergyPeriod[] = ['day', 'week', 'month', 'year', 'billing'];
-
   const handlePeriodChange = useCallback((p: EnergyPeriod) => setEnergyPeriod(p), []);
-
-  const locationText = useMemo(() => {
-    if (gpsError) return 'Solar Plant, CA';
-    if (gpsLocation) return `${w.city}, ${w.country}`;
-    return `${w.city}, ${w.country}`;
-  }, [gpsError, gpsLocation, w]);
 
   if (loading) {
     return (
@@ -164,129 +147,226 @@ export const DashboardPage: React.FC<DashboardPageProps> = React.memo(({ onMenuO
   }
 
   return (
-    <div className="p-4 space-y-4">
-      <header className="flex items-center justify-between py-2">
-        <button onClick={onMenuOpen} className="p-2 rounded-xl" style={{ background: colors.cardBgAlpha }}>
-          <Menu size={22} style={{ color: colors.text }} />
+    <div className="p-4 space-y-5 pb-24">
+      {/* HEADER */}
+      <div className="flex items-center justify-between">
+        <button onClick={onMenuOpen} className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)', border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)'}` }}>
+          <Menu size={18} style={{ color: colors.text }} />
         </button>
-        <div className="flex items-center gap-2">
-          {greetingIcon}
-          <span className="font-semibold text-sm">{greeting}, {user?.name?.split(' ')[0] || 'User'}</span>
+        <div className="flex flex-col items-center">
+          <div className="flex items-center gap-1.5">
+            {greetingIcon}
+            <span className="text-sm font-semibold" style={{ color: colors.textMuted }}>{greeting}</span>
+          </div>
+          <span className="text-lg font-bold" style={{ color: colors.text }}>{user?.name?.split(' ')[0] || 'User'}</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium" style={{ background: colors.cardBgAlpha, border: `1px solid ${colors.border}` }}>
-            {weatherConditionIcons[w.condition] || <Sun size={14} style={{ color: colors.accent }} />}
-            <span>{w.temperature.toFixed(0)}°</span>
-            <span className="text-[10px]" style={{ color: colors.textMuted }}>{w.condition}</span>
-          </div>
-          <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium" style={{ background: colors.cardBgAlpha, border: `1px solid ${colors.border}` }}>
-            <MapPin size={12} style={{ color: colors.accent }} />
-            <span className="max-w-[80px] truncate">{locationText}</span>
-          </div>
-          <button onClick={() => navigate('/alerts')} className="relative p-2 rounded-xl" style={{ background: colors.cardBgAlpha }}>
-            <Bell size={20} style={{ color: colors.text }} />
+          <button className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)', border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)'}` }}>
+            <Moon size={16} style={{ color: colors.textMuted }} />
           </button>
-          <button onClick={() => navigate('/profile')} className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ background: colors.accent }}>
+          <button onClick={() => navigate('/alerts')} className="relative w-10 h-10 rounded-full flex items-center justify-center" style={{ background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)', border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)'}` }}>
+            <Bell size={16} style={{ color: colors.text }} />
+          </button>
+          <button onClick={() => navigate('/profile')} className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ background: `linear-gradient(135deg, ${colors.accent}, #FF8C00)` }}>
             {user?.name?.charAt(0) || 'U'}
           </button>
         </div>
-      </header>
+      </div>
 
+      {/* HERO POWER FLOW CARD - Illustrated Solar System Diagram */}
       <GlassCard className="relative overflow-hidden" padding="p-0">
-        <div className="relative h-[280px]">
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{
-              backgroundImage: 'url(https://www.istockphoto.com/photo/solar-panels-on-the-roof-3d-illustration-gm1935031109-556221587)',
-            }}
-          />
-          <div className="absolute inset-0 bg-black/55" />
-
-          <motion.div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background: 'radial-gradient(ellipse 60% 40% at 30% 20%, rgba(255,200,50,0.15) 0%, transparent 70%)',
-            }}
-            animate={{ opacity: [0.4, 0.8, 0.4] }}
-            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-          />
-
-          <div className="absolute top-3 left-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium text-white" style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.2)' }}>
-            <MapPin size={10} className="text-amber-400" />
-            <span>{locationText}</span>
+        <div className="relative" style={{ minHeight: 300 }}>
+          {/* Soft landscape gradient background */}
+          <div className="absolute inset-0 rounded-[24px] overflow-hidden">
+            <div className="absolute inset-0" style={{
+              background: isDark
+                ? 'linear-gradient(180deg, #0D1B2A 0%, #1B2A3B 40%, #1a3a2a 70%, #0D1B2A 100%)'
+                : 'linear-gradient(180deg, #87CEEB 0%, #B8E4F0 25%, #E8F5E9 55%, #C8E6C9 75%, #A5D6A7 100%)',
+            }} />
+            {/* Sun glow */}
+            <motion.div
+              className="absolute"
+              style={{ top: 8, left: 12, width: 60, height: 60, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,200,50,0.6) 0%, rgba(255,165,0,0.2) 50%, transparent 70%)' }}
+              animate={{ scale: [1, 1.1, 1], opacity: [0.7, 1, 0.7] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            {/* Clouds */}
+            <motion.div
+              className="absolute animate-cloud-drift"
+              style={{ top: 20, right: 60, opacity: 0.5 }}
+            >
+              <Cloud size={28} style={{ color: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.7)' }} />
+            </motion.div>
+            <motion.div
+              className="absolute"
+              style={{ top: 35, right: 20, opacity: 0.3 }}
+              animate={{ x: [0, 6, 0] }}
+              transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <Cloud size={20} style={{ color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)' }} />
+            </motion.div>
+            {/* Ground line */}
+            <div className="absolute bottom-0 left-0 right-0 h-16" style={{
+              background: isDark
+                ? 'linear-gradient(180deg, transparent, rgba(13,27,42,0.8))'
+                : 'linear-gradient(180deg, transparent, rgba(139,195,74,0.3))',
+            }} />
           </div>
 
-          <div className="absolute top-3 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium text-white" style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.2)' }}>
-            {weatherConditionIcons[w.condition] || <Sun size={10} className="text-yellow-400" />}
-            <span>{w.temperature.toFixed(0)}°C</span>
-            <span>{w.condition}</span>
+          {/* Floating metric bubbles */}
+          <div className="absolute top-3 left-3 z-20">
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-2xl text-[10px] font-semibold" style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff' }}>
+              <Sun size={10} className="text-yellow-300" />
+              <span>Solar Input</span>
+              <span className="font-mono font-bold">{latestReading?.irradiance?.toFixed(0) ?? '--'} W/m²</span>
+            </div>
+          </div>
+          <div className="absolute top-3 right-3 z-20">
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-2xl text-[10px] font-semibold" style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff' }}>
+              <MapPin size={10} className="text-amber-300" />
+              <span>{w.temperature.toFixed(0)}°C {w.condition}</span>
+            </div>
+          </div>
+          <div className="absolute bottom-20 left-3 z-20">
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-2xl text-[10px] font-semibold" style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff' }}>
+              <Home size={10} className="text-blue-300" />
+              <span>Home Usage</span>
+              <span className="font-mono font-bold">{(latestReading?.power_ac ?? 0 * 0.7).toFixed(1)} kW</span>
+            </div>
+          </div>
+          <div className="absolute bottom-20 right-3 z-20">
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-2xl text-[10px] font-semibold" style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff' }}>
+              <Activity size={10} style={{ color: colors.secondary }} />
+              <span>Grid Export</span>
+              <span className="font-mono font-bold">{(latestReading?.power_ac ?? 0 * 0.3).toFixed(1)} kW</span>
+            </div>
           </div>
 
-          <svg className="absolute bottom-16 left-3 opacity-20" width="40" height="40" viewBox="0 0 40 40">
-            <rect x="2" y="8" width="16" height="12" rx="1" fill="none" stroke="#FFD700" strokeWidth="1" />
-            <rect x="22" y="8" width="16" height="12" rx="1" fill="none" stroke="#FFD700" strokeWidth="1" />
-            <rect x="2" y="22" width="16" height="12" rx="1" fill="none" stroke="#FFD700" strokeWidth="1" />
-            <rect x="22" y="22" width="16" height="12" rx="1" fill="none" stroke="#FFD700" strokeWidth="1" />
-            <line x1="10" y1="8" x2="10" y2="20" stroke="#FFD700" strokeWidth="0.5" />
-            <line x1="30" y1="8" x2="30" y2="20" stroke="#FFD700" strokeWidth="0.5" />
-            <line x1="10" y1="22" x2="10" y2="34" stroke="#FFD700" strokeWidth="0.5" />
-            <line x1="30" y1="22" x2="30" y2="34" stroke="#FFD700" strokeWidth="0.5" />
-          </svg>
+          {/* ILLUSTRATED SOLAR SYSTEM DIAGRAM */}
+          <div className="relative z-10 flex flex-col items-center justify-center pt-10 pb-4 px-2">
+            {/* SVG Energy Flow Diagram */}
+            <svg viewBox="0 0 340 140" className="w-full max-w-[340px]" style={{ overflow: 'visible' }}>
+              {/* Sun with rotating rays */}
+              <g transform="translate(30, 30)">
+                <motion.g animate={{ rotate: 360 }} transition={{ duration: 30, repeat: Infinity, ease: 'linear' }} style={{ transformOrigin: '20px 20px' }}>
+                  {[0, 45, 90, 135, 180, 225, 270, 315].map(angle => (
+                    <line key={angle}
+                      x1={20 + Math.cos(angle * Math.PI / 180) * 14}
+                      y1={20 + Math.sin(angle * Math.PI / 180) * 14}
+                      x2={20 + Math.cos(angle * Math.PI / 180) * 22}
+                      y2={20 + Math.sin(angle * Math.PI / 180) * 22}
+                      stroke="#FFD700" strokeWidth="2" strokeLinecap="round"
+                    />
+                  ))}
+                </motion.g>
+                <circle cx="20" cy="20" r="12" fill="#FFD700" />
+                <circle cx="20" cy="20" r="12" fill="none" stroke="#FFA500" strokeWidth="1" />
+                <text x="20" y="52" textAnchor="middle" fill="white" fontSize="7" fontWeight="600">Sun</text>
+                <text x="20" y="62" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="6" fontFamily="monospace">{latestReading?.irradiance?.toFixed(0) ?? '--'} W/m²</text>
+              </g>
 
-          <svg className="absolute bottom-16 right-3 opacity-15" width="32" height="32" viewBox="0 0 32 32">
-            <rect x="2" y="2" width="12" height="8" rx="1" fill="none" stroke="#FFD700" strokeWidth="1" />
-            <rect x="18" y="2" width="12" height="8" rx="1" fill="none" stroke="#FFD700" strokeWidth="1" />
-            <rect x="2" y="14" width="12" height="8" rx="1" fill="none" stroke="#FFD700" strokeWidth="1" />
-            <rect x="18" y="14" width="12" height="8" rx="1" fill="none" stroke="#FFD700" strokeWidth="1" />
-          </svg>
+              {/* Energy flow line: Sun → Panels */}
+              <motion.line x1="55" y1="50" x2="100" y2="50"
+                stroke={colors.accent} strokeWidth="2" strokeDasharray="6 4"
+                animate={{ strokeDashoffset: [0, -10] }}
+                transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+              />
+              <text x="78" y="44" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="5">Solar</text>
 
-          <div className="relative z-10 h-full flex flex-col justify-between p-5">
-            <div className="flex justify-between items-start mt-6">
-              <div>
-                <p className="text-white/80 text-sm">Production Today</p>
-                <p className="text-white text-xl font-bold">10.1 kWh</p>
-              </div>
-            </div>
+              {/* Solar Panels on roof */}
+              <g transform="translate(100, 15)">
+                <rect x="0" y="8" width="40" height="5" rx="1" fill="none" stroke={colors.accent} strokeWidth="1.5" opacity="0.8" />
+                <rect x="0" y="15" width="40" height="5" rx="1" fill="none" stroke={colors.accent} strokeWidth="1.5" opacity="0.8" />
+                <rect x="0" y="22" width="40" height="5" rx="1" fill="none" stroke={colors.accent} strokeWidth="1.5" opacity="0.8" />
+                {/* Panel grid lines */}
+                <line x1="13" y1="8" x2="13" y2="27" stroke={colors.accent} strokeWidth="0.5" opacity="0.4" />
+                <line x1="27" y1="8" x2="27" y2="27" stroke={colors.accent} strokeWidth="0.5" opacity="0.4" />
+                {/* Shimmer effect */}
+                <motion.rect x="0" y="8" width="40" height="19" rx="1" fill={colors.accent} opacity="0.08"
+                  animate={{ opacity: [0.05, 0.15, 0.05] }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                />
+                <text x="20" y="42" textAnchor="middle" fill="white" fontSize="7" fontWeight="600">Panels</text>
+                <text x="20" y="52" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="6" fontFamily="monospace">{latestReading?.power_ac?.toFixed(1) ?? '--'} kW</text>
+              </g>
 
-            <div className="flex items-center justify-around py-4">
-              {[
-                { icon: <Sun size={24} className="text-yellow-400" />, label: 'Sun', value: `${latestReading?.irradiance?.toFixed(0) ?? '--'} W/m²` },
-                { icon: <Zap size={24} style={{ color: colors.accent }} />, label: 'Panels', value: `${latestReading?.power_ac?.toFixed(1) ?? '--'} kW` },
-                { icon: <span className="text-2xl">🏠</span>, label: 'House', value: `${(latestReading?.power_ac ?? 0 * 0.7).toFixed(1)} kW` },
-                { icon: <Activity size={24} style={{ color: colors.secondary }} />, label: 'Grid', value: `${(latestReading?.power_ac ?? 0 * 0.3).toFixed(1)} kW` },
-              ].map((node, i) => (
-                <React.Fragment key={node.label}>
-                  <div className="flex flex-col items-center gap-1">
-                    <motion.div
-                      className="w-14 h-14 rounded-full flex items-center justify-center"
-                      style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.2)' }}
-                      animate={i === 2 ? { scale: [1, 1.08, 1] } : {}}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    >
-                      {node.icon}
-                    </motion.div>
-                    <span className="text-white/70 text-[10px]">{node.label}</span>
-                    <span className="text-white text-xs font-mono font-bold">{node.value}</span>
-                  </div>
-                  {i < 3 && (
-                    <svg width="30" height="20" className="overflow-visible">
-                      <motion.line
-                        x1="0" y1="10" x2="30" y2="10"
-                        stroke={colors.accent}
-                        strokeWidth="2"
-                        strokeDasharray="4 4"
-                        animate={{ strokeDashoffset: [0, -8] }}
-                        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                      />
-                    </svg>
-                  )}
-                </React.Fragment>
-              ))}
-            </div>
+              {/* Energy flow: Panels → Inverter */}
+              <motion.line x1="142" y1="35" x2="165" y2="55"
+                stroke={colors.accent} strokeWidth="2" strokeDasharray="6 4"
+                animate={{ strokeDashoffset: [0, -10] }}
+                transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+              />
+              <text x="155" y="40" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="5">DC</text>
 
-            <div className="text-center">
+              {/* Inverter node */}
+              <g transform="translate(160, 40)">
+                <rect x="0" y="0" width="24" height="24" rx="6" fill="rgba(255,255,255,0.12)" stroke={colors.accent} strokeWidth="1.5" />
+                <text x="12" y="14" textAnchor="middle" fill={colors.accent} fontSize="8" fontWeight="bold">AC</text>
+                <text x="12" y="38" textAnchor="middle" fill="white" fontSize="7" fontWeight="600">Inverter</text>
+                <text x="12" y="48" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="6" fontFamily="monospace">{latestReading?.efficiency?.toFixed(0) ?? '--'}%</text>
+              </g>
+
+              {/* Energy flow: Inverter → House */}
+              <motion.line x1="186" y1="52" x2="220" y2="52"
+                stroke="#27AE60" strokeWidth="2" strokeDasharray="6 4"
+                animate={{ strokeDashoffset: [0, -10] }}
+                transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+              />
+              <text x="203" y="46" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="5">AC</text>
+
+              {/* House - center focal point */}
+              <g transform="translate(220, 20)">
+                <motion.g animate={{ scale: [1, 1.03, 1] }} transition={{ duration: 2.5, repeat: Infinity }}>
+                  {/* House shape */}
+                  <polygon points="20,0 0,18 40,18" fill="none" stroke="white" strokeWidth="1.5" opacity="0.6" />
+                  <rect x="4" y="18" width="32" height="22" rx="2" fill="rgba(255,255,255,0.1)" stroke="white" strokeWidth="1" opacity="0.5" />
+                  {/* Door */}
+                  <rect x="15" y="26" width="10" height="14" rx="1" fill="rgba(255,200,50,0.2)" stroke={colors.accent} strokeWidth="0.8" />
+                  {/* Amber glow ring */}
+                  <circle cx="20" cy="20" r="28" fill="none" stroke={colors.accent} strokeWidth="1.5" opacity="0.3" />
+                </motion.g>
+                <text x="20" y="52" textAnchor="middle" fill="white" fontSize="7" fontWeight="600">Home</text>
+                <text x="20" y="62" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="6" fontFamily="monospace">{(latestReading?.power_ac ?? 0 * 0.7).toFixed(1)} kW</text>
+              </g>
+
+              {/* Energy flow: House → Grid */}
+              <motion.line x1="262" y1="45" x2="295" y2="35"
+                stroke={colors.secondary} strokeWidth="2" strokeDasharray="6 4"
+                animate={{ strokeDashoffset: [0, -10] }}
+                transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+              />
+              <text x="280" y="28" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="5">Export</text>
+
+              {/* Grid / Utility pole */}
+              <g transform="translate(295, 10)">
+                <line x1="10" y1="0" x2="10" y2="35" stroke="rgba(255,255,255,0.5)" strokeWidth="2" />
+                <line x1="2" y1="8" x2="18" y2="8" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" />
+                <line x1="4" y1="16" x2="16" y2="16" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" />
+                <text x="10" y="48" textAnchor="middle" fill="white" fontSize="7" fontWeight="600">Grid</text>
+                <text x="10" y="58" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="6" fontFamily="monospace">{(latestReading?.power_ac ?? 0 * 0.3).toFixed(1)} kW</text>
+              </g>
+
+              {/* Battery node (optional) */}
+              <g transform="translate(220, 85)">
+                <motion.rect x="0" y="0" width="20" height="12" rx="3" fill="rgba(255,255,255,0.08)" stroke={colors.secondary} strokeWidth="1" opacity="0.6" />
+                <rect x="20" y="3" width="3" height="6" rx="1" fill={colors.secondary} opacity="0.4" />
+                <motion.rect x="2" y="2" width="10" height="8" rx="2" fill={colors.secondary} opacity="0.2"
+                  animate={{ width: [6, 10, 6] }}
+                  transition={{ duration: 4, repeat: Infinity }}
+                />
+                <text x="10" y="24" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="5">Battery 78%</text>
+              </g>
+
+              {/* Infographic labels along connections */}
+              <text x="78" y="60" textAnchor="middle" fill="rgba(255,255,255,0.4)" fontSize="5" fontStyle="italic">Solar Generation</text>
+              <text x="203" y="60" textAnchor="middle" fill="rgba(255,255,255,0.4)" fontSize="5" fontStyle="italic">Home Consumption</text>
+              <text x="280" y="48" textAnchor="middle" fill="rgba(255,255,255,0.4)" fontSize="5" fontStyle="italic">Grid Export</text>
+            </svg>
+
+            {/* Central power reading overlay */}
+            <div className="text-center -mt-2">
               <motion.p
-                className="text-[32px] font-bold text-white font-mono"
+                className="text-[28px] font-bold text-white font-mono leading-tight"
                 key={latestReading?.power_ac?.toFixed(2)}
                 initial={{ scale: 1 }}
                 animate={{ scale: [1, 1.05, 1] }}
@@ -294,12 +374,25 @@ export const DashboardPage: React.FC<DashboardPageProps> = React.memo(({ onMenuO
               >
                 {animatedPower.toFixed(2)} kW
               </motion.p>
-              <p className="text-white/70 text-sm">Solar Power Now</p>
+              <p className="text-white/60 text-xs">Solar Power Now</p>
+            </div>
+          </div>
+
+          {/* Production Today bar */}
+          <div className="relative z-10 flex items-center justify-between px-4 pb-3">
+            <div>
+              <p className="text-white/60 text-[10px] font-medium">Production Today</p>
+              <p className="text-white text-base font-bold">10.1 kWh</p>
+            </div>
+            <div className="flex items-center gap-1 px-2 py-1 rounded-full" style={{ background: 'rgba(39,174,96,0.2)', border: '1px solid rgba(39,174,96,0.3)' }}>
+              <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
+              <span className="text-[10px] font-semibold text-green-300">Updated now</span>
             </div>
           </div>
         </div>
       </GlassCard>
 
+      {/* STATS GRID */}
       <div className="grid grid-cols-2 gap-3">
         {statConfig.map((stat, i) => {
           const Icon = stat.icon;
@@ -313,8 +406,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = React.memo(({ onMenuO
               transition={{ delay: i * 0.05 }}
             >
               <GlassCard padding="p-4" hover>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: `${stat.color}22` }}>
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: `${stat.color}15` }}>
                     <Icon size={16} style={{ color: stat.color }} />
                   </div>
                   <span className="text-xs font-medium" style={{ color: colors.textMuted }}>{stat.label}</span>
@@ -333,7 +426,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = React.memo(({ onMenuO
                   <div className="h-6">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={sparkData.map((v, j) => ({ name: j, value: v }))}>
-                        <Area type="monotone" dataKey="value" stroke={stat.color} fill={`${stat.color}33`} dot={false} />
+                        <Area type="monotone" dataKey="value" stroke={stat.color} fill={`${stat.color}20`} dot={false} />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
@@ -344,20 +437,25 @@ export const DashboardPage: React.FC<DashboardPageProps> = React.memo(({ onMenuO
         })}
       </div>
 
+      {/* ENERGY PRODUCED */}
       <GlassCard>
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-lg" style={{ color: colors.text }}>Energy Produced</h3>
+          <div className="flex items-center gap-1 px-2 py-1 rounded-full" style={{ background: 'rgba(39,174,96,0.12)', border: '1px solid rgba(39,174,96,0.2)' }}>
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+            <span className="text-[10px] font-semibold text-green-600">Updated now</span>
+          </div>
         </div>
-        <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+        <div className="flex gap-1.5 mb-4 p-1 rounded-2xl" style={{ background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }}>
           {periodTabs.map(p => (
             <button
               key={p}
               onClick={() => handlePeriodChange(p)}
-              className="px-4 py-1.5 rounded-full text-sm font-medium capitalize whitespace-nowrap transition-colors"
+              className="flex-1 py-2 rounded-xl text-xs font-semibold capitalize transition-all"
               style={{
-                background: energyPeriod === p ? colors.accent : colors.cardBgAlpha,
+                background: energyPeriod === p ? colors.accent : 'transparent',
                 color: energyPeriod === p ? '#fff' : colors.textMuted,
-                border: `1px solid ${energyPeriod === p ? colors.accent : colors.border}`,
+                boxShadow: energyPeriod === p ? '0 2px 8px rgba(245,166,35,0.3)' : 'none',
               }}
             >
               {p}
@@ -369,21 +467,22 @@ export const DashboardPage: React.FC<DashboardPageProps> = React.memo(({ onMenuO
             <AreaChart data={energyData}>
               <defs>
                 <linearGradient id="energyGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={colors.accent} stopOpacity={0.4} />
+                  <stop offset="0%" stopColor={colors.accent} stopOpacity={0.35} />
                   <stop offset="100%" stopColor={colors.accent} stopOpacity={0} />
                 </linearGradient>
               </defs>
               <XAxis dataKey="name" tick={{ fontSize: 10, fill: colors.textMuted }} axisLine={false} tickLine={false} />
               <Tooltip
                 contentStyle={{
-                  background: colors.cardBg,
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: '12px',
+                  background: isDark ? '#1B2A3B' : '#fff',
+                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+                  borderRadius: '16px',
                   color: colors.text,
                   fontSize: '12px',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
                 }}
               />
-              <Area type="monotone" dataKey="value" stroke={colors.accent} fill="url(#energyGrad)" strokeWidth={2} animationDuration={800} />
+              <Area type="monotone" dataKey="value" stroke={colors.accent} fill="url(#energyGrad)" strokeWidth={2.5} animationDuration={800} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -393,14 +492,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = React.memo(({ onMenuO
             { label: 'This Year', value: '3,840 kWh' },
             { label: 'Lifetime', value: '12,450 kWh' },
           ].map(chip => (
-            <div key={chip.label} className="flex-1 text-center p-2 rounded-xl" style={{ background: `${colors.accent}11`, border: `1px solid ${colors.border}` }}>
-              <p className="text-xs" style={{ color: colors.textMuted }}>{chip.label}</p>
+            <div key={chip.label} className="flex-1 text-center p-3 rounded-2xl" style={{ background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)', border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}` }}>
+              <p className="text-[10px] font-medium" style={{ color: colors.textMuted }}>{chip.label}</p>
               <p className="font-bold text-sm" style={{ color: colors.accent }}>{chip.value}</p>
             </div>
           ))}
         </div>
       </GlassCard>
 
+      {/* AI INSIGHT */}
       <AnimatePresence mode="wait">
         <motion.div
           key={tipIndex}
@@ -409,7 +509,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = React.memo(({ onMenuO
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.5 }}
         >
-          <GlassCard className="flex items-start gap-3" style={{ background: `${colors.accent}15`, border: `1px solid ${colors.accent}33` } as React.CSSProperties}>
+          <GlassCard className="flex items-start gap-3" style={{ background: `${colors.accent}10`, border: `1px solid ${colors.accent}25` } as React.CSSProperties}>
             <Sparkles size={20} style={{ color: colors.accent }} className="mt-0.5 shrink-0" />
             <div>
               <span className="font-bold text-sm" style={{ color: colors.accent }}>AI Insight: </span>

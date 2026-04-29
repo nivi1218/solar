@@ -21,7 +21,7 @@ const statusColors: Record<string, string> = {
 };
 
 export const InvertersPage: React.FC = React.memo(() => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { inverters } = useData();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<InverterFilter>('all');
@@ -64,7 +64,7 @@ export const InvertersPage: React.FC = React.memo(() => {
   const closeSheet = useCallback(() => setSelected(null), []);
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-5 pb-24">
       <h2 className="text-xl font-bold" style={{ color: colors.text }}>Inverters</h2>
 
       <div className="relative">
@@ -74,26 +74,25 @@ export const InvertersPage: React.FC = React.memo(() => {
           placeholder="Search inverters..."
           value={search}
           onChange={handleSearch}
-          className="w-full pl-12 pr-4 py-3 rounded-xl outline-none text-sm"
+          className="w-full pl-12 pr-4 py-3 rounded-2xl outline-none text-sm"
           style={{
-            background: colors.cardBgAlpha,
-            border: `1px solid ${colors.border}`,
+            background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)',
+            border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)'}`,
             color: colors.text,
-            backdropFilter: 'blur(20px)',
           }}
         />
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className="flex gap-1.5 p-1 rounded-2xl" style={{ background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }}>
         {filterConfig.map(f => (
           <button
             key={f.key}
             onClick={() => handleFilterChange(f.key)}
-            className="px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors"
+            className="flex-1 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all"
             style={{
-              background: filter === f.key ? colors.accent : colors.cardBgAlpha,
+              background: filter === f.key ? colors.accent : 'transparent',
               color: filter === f.key ? '#fff' : colors.textMuted,
-              border: `1px solid ${filter === f.key ? colors.accent : colors.border}`,
+              boxShadow: filter === f.key ? '0 2px 8px rgba(245,166,35,0.3)' : 'none',
             }}
           >
             {f.label} [{counts[f.key]}]
@@ -170,10 +169,10 @@ export const InvertersPage: React.FC = React.memo(() => {
             <motion.div
               className="fixed bottom-0 left-0 right-0 z-50 rounded-t-[28px] p-6 max-h-[80vh] overflow-y-auto"
               style={{
-                background: colors.cardBgAlpha,
+                background: isDark ? 'rgba(27, 42, 59, 0.95)' : 'rgba(255, 255, 255, 0.95)',
                 backdropFilter: 'blur(24px)',
-                border: `1px solid ${colors.border}`,
-                boxShadow: '0 -8px 32px rgba(0,0,0,0.3)',
+                border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)'}`,
+                boxShadow: '0 -8px 32px rgba(0,0,0,0.15)',
               }}
               initial={{ y: '100%' }}
               animate={{ y: 0 }}

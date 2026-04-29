@@ -11,7 +11,7 @@
   --secondary: #27AE60;
   --card-bg: rgba(255, 255, 255, 0.7);
   --text-muted: #6B7280;
-  --border: rgba(255, 255, 255, 0.2);
+  --border: rgba(0, 0, 0, 0.06);
 }
 
 * {
@@ -24,6 +24,7 @@ body {
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: smooth;
 }
 
 .font-mono {
@@ -88,6 +89,34 @@ body {
 
 .shimmer {
   animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes energy-flow {
+  0% { stroke-dashoffset: 20; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.animate-energy-flow {
+  animation: energy-flow 1s linear infinite;
+}
+
+@keyframes cloud-drift {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(8px); }
+  100% { transform: translateX(0); }
+}
+
+.animate-cloud-drift {
+  animation: cloud-drift 12s ease-in-out infinite;
+}
+
+@keyframes panel-shimmer {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.35; }
+}
+
+.animate-panel-shimmer {
+  animation: panel-shimmer 3s ease-in-out infinite;
 }
 
 .line-clamp-2 {

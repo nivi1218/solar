@@ -14,7 +14,7 @@ const AI_SUMMARIES: Record<ReportPeriod, string> = {
 };
 
 export const ReportsPage: React.FC = React.memo(() => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { latestReading, inverters } = useData();
   const [period, setPeriod] = useState<ReportPeriod>('day');
 
@@ -51,19 +51,20 @@ export const ReportsPage: React.FC = React.memo(() => {
   const handlePeriodChange = useCallback((p: ReportPeriod) => setPeriod(p), []);
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-5 pb-24">
       <h2 className="text-xl font-bold" style={{ color: colors.text }}>Reports</h2>
 
-      <div className="flex gap-2">
+      {/* Segmented pill selector */}
+      <div className="flex gap-1.5 p-1 rounded-2xl" style={{ background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }}>
         {periodTabs.map(p => (
           <button
             key={p}
             onClick={() => handlePeriodChange(p)}
-            className="px-5 py-1.5 rounded-full text-sm font-medium capitalize transition-colors"
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold capitalize transition-all"
             style={{
-              background: period === p ? colors.accent : colors.cardBgAlpha,
+              background: period === p ? colors.accent : 'transparent',
               color: period === p ? '#fff' : colors.textMuted,
-              border: `1px solid ${period === p ? colors.accent : colors.border}`,
+              boxShadow: period === p ? '0 2px 8px rgba(245,166,35,0.3)' : 'none',
             }}
           >
             {p}
@@ -71,43 +72,60 @@ export const ReportsPage: React.FC = React.memo(() => {
         ))}
       </div>
 
+      {/* Production Trend chart card */}
       <GlassCard>
-        <h3 className="font-bold mb-3" style={{ color: colors.text }}>Power Production Trend</h3>
+        <h3 className="font-bold text-base mb-4" style={{ color: colors.text }}>Production Trend</h3>
         <div className="h-52">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={powerData}>
               <defs>
-                <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={colors.accent} stopOpacity={0.3} />
+                <linearGradient id="reportLineGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={colors.accent} stopOpacity={0.25} />
                   <stop offset="100%" stopColor={colors.accent} stopOpacity={0} />
                 </linearGradient>
               </defs>
               <XAxis dataKey="name" tick={{ fontSize: 10, fill: colors.textMuted }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 10, fill: colors.textMuted }} axisLine={false} tickLine={false} width={40} />
-              <Tooltip contentStyle={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: '12px', color: colors.text, fontSize: '12px' }} />
+              <Tooltip contentStyle={{
+                background: isDark ? '#1B2A3B' : '#fff',
+                border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+                borderRadius: '16px',
+                color: colors.text,
+                fontSize: '12px',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+              }} />
               <Line type="monotone" dataKey="value" stroke={colors.accent} strokeWidth={2.5} dot={false} animationDuration={800} />
             </LineChart>
           </ResponsiveContainer>
         </div>
       </GlassCard>
 
+      {/* Top 10 Inverter Performance bar chart card */}
       <GlassCard>
-        <h3 className="font-bold mb-3" style={{ color: colors.text }}>Top 10 Inverter Comparison</h3>
+        <h3 className="font-bold text-base mb-4" style={{ color: colors.text }}>Top 10 Inverter Performance</h3>
         <div className="h-52">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={topInverters}>
               <XAxis dataKey="name" tick={{ fontSize: 9, fill: colors.textMuted }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 10, fill: colors.textMuted }} axisLine={false} tickLine={false} width={40} />
-              <Tooltip contentStyle={{ background: colors.cardBg, border: `1px solid ${colors.border}`, borderRadius: '12px', color: colors.text, fontSize: '12px' }} />
-              <Bar dataKey="power" fill={colors.accent} radius={[6, 6, 0, 0]} animationDuration={800} />
+              <Tooltip contentStyle={{
+                background: isDark ? '#1B2A3B' : '#fff',
+                border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+                borderRadius: '16px',
+                color: colors.text,
+                fontSize: '12px',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+              }} />
+              <Bar dataKey="power" fill="#27AE60" radius={[8, 8, 0, 0]} animationDuration={800} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </GlassCard>
 
-      <GlassCard style={{ background: `${colors.accent}15`, border: `1px solid ${colors.accent}33` } as React.CSSProperties}>
+      {/* AI Summary */}
+      <GlassCard style={{ background: `${colors.accent}08`, border: `1px solid ${colors.accent}20` } as React.CSSProperties}>
         <div className="flex items-start gap-3">
-          <Sparkles size={20} style={{ color: colors.accent }} className="mt-0.5 shrink-0" />
+          <Sparkles size={18} style={{ color: colors.accent }} className="mt-0.5 shrink-0" />
           <div>
             <span className="font-bold text-sm" style={{ color: colors.accent }}>AI Summary: </span>
             <span className="text-sm" style={{ color: colors.text }}>{AI_SUMMARIES[period]}</span>
@@ -115,8 +133,9 @@ export const ReportsPage: React.FC = React.memo(() => {
         </div>
       </GlassCard>
 
+      {/* Download section */}
       <GlassCard>
-        <h3 className="font-bold mb-3" style={{ color: colors.text }}>Download Reports</h3>
+        <h3 className="font-bold text-base mb-4" style={{ color: colors.text }}>Download Reports</h3>
         <div className="space-y-3">
           {[
             { label: 'Daily PDF', icon: <FileText size={18} />, desc: 'Today\'s detailed report' },
@@ -125,11 +144,11 @@ export const ReportsPage: React.FC = React.memo(() => {
           ].map(btn => (
             <motion.button
               key={btn.label}
-              className="w-full flex items-center gap-3 p-4 rounded-xl text-left"
-              style={{ background: `${colors.accent}11`, border: `1px solid ${colors.border}` }}
+              className="w-full flex items-center gap-3 p-4 rounded-2xl text-left"
+              style={{ background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)', border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}` }}
               whileTap={{ scale: 0.98 }}
             >
-              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: `${colors.accent}22`, color: colors.accent }}>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: `${colors.accent}15`, color: colors.accent }}>
                 {btn.icon}
               </div>
               <div className="flex-1">

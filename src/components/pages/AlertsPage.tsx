@@ -27,7 +27,7 @@ const typeIcons: Record<string, React.ReactNode> = {
 };
 
 export const AlertsPage: React.FC = React.memo(() => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { alerts, resolveAlert, dismissAlert, markAlertRead } = useData();
   const [filter, setFilter] = useState<AlertFilter>('all');
   const [selected, setSelected] = useState<Alert | null>(null);
@@ -67,7 +67,7 @@ export const AlertsPage: React.FC = React.memo(() => {
   }, []);
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-5 pb-24">
       <h2 className="text-xl font-bold" style={{ color: colors.text }}>Alerts</h2>
 
       <div className="grid grid-cols-2 gap-2">
@@ -75,12 +75,11 @@ export const AlertsPage: React.FC = React.memo(() => {
           <button
             key={f.key}
             onClick={() => handleFilterChange(f.key)}
-            className="flex items-center gap-2 p-3 rounded-xl text-sm font-medium transition-colors"
+            className="flex items-center gap-2 p-3 rounded-2xl text-sm font-medium transition-colors"
             style={{
-              background: filter === f.key ? `${f.color}22` : colors.cardBgAlpha,
+              background: filter === f.key ? `${f.color}18` : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)'),
               color: filter === f.key ? f.color : colors.textMuted,
-              border: `1px solid ${filter === f.key ? `${f.color}44` : colors.border}`,
-              backdropFilter: 'blur(20px)',
+              border: `1px solid ${filter === f.key ? `${f.color}30` : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)')}`,
             }}
           >
             <span style={{ color: f.color }}>{f.icon}</span>
@@ -171,10 +170,10 @@ export const AlertsPage: React.FC = React.memo(() => {
             <motion.div
               className="fixed bottom-0 left-0 right-0 z-50 rounded-t-[28px] p-6"
               style={{
-                background: colors.cardBgAlpha,
+                background: isDark ? 'rgba(27, 42, 59, 0.95)' : 'rgba(255, 255, 255, 0.95)',
                 backdropFilter: 'blur(24px)',
-                border: `1px solid ${colors.border}`,
-                boxShadow: '0 -8px 32px rgba(0,0,0,0.3)',
+                border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)'}`,
+                boxShadow: '0 -8px 32px rgba(0,0,0,0.15)',
               }}
               initial={{ y: '100%' }}
               animate={{ y: 0 }}

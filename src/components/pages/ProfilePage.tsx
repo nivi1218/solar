@@ -44,7 +44,7 @@ export const ProfilePage: React.FC = React.memo(() => {
   ];
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-5 pb-24">
       <h2 className="text-xl font-bold" style={{ color: colors.text }}>Profile</h2>
 
       <GlassCard className="text-center" padding="p-6">
